@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+  <div class="max-w-sm w-full bg-white p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Registrar</h2>
+    <div id="alert" class="hidden mb-4 p-2 rounded text-white"></div>
+    <form id="registerForm" class="space-y-4">
+      <input type="text" id="nome" placeholder="Nome" class="w-full p-2 border rounded" required />
+      <input type="email" id="email" placeholder="Email" class="w-full p-2 border rounded" required />
+      <input type="password" id="senha" placeholder="Senha" class="w-full p-2 border rounded" required />
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Registrar</button>
+      <p class="text-center text-sm mt-3">
+        Já tem conta? <a href="login.html" class="text-blue-500 hover:underline">Login</a>
+      </p>
+    </form>
+  </div>
+
+  <script>
+    const API_URL = "http://192.168.43.184:3000";
+
+    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const nome = document.getElementById("nome").value;
+      const email = document.getElementById("email").value;
+      const senha = document.getElementById("senha").value;
+      const tipo = "admin"
+      const alertDiv = document.getElementById("alert");
+
+      try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nome, email, tipo,  senha }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alertDiv.innerText = "Cadastro realizado com sucesso!";
+          alertDiv.className = "bg-green-500 text-white p-2 rounded mb-4";
+          alertDiv.classList.remove("hidden");
+          setTimeout(() => window.location.href = "login.html", 1500);
+        } else {
+          alertDiv.innerText = data.error || "Erro ao registrar";
+          alertDiv.className = "bg-red-500 text-white p-2 rounded mb-4";
+          alertDiv.classList.remove("hidden");
+        }
+      } catch (err) {
+        alertDiv.innerText = "Erro ao conectar com o servidor";
+        alertDiv.className = "bg-red-500 text-white p-2 rounded mb-4";
+        alertDiv.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="max-w-md w-full bg-white p-6 rounded-lg shadow-lg text-center space-y-4">
+    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+    <p id="message" class="text-gray-600"></p>
+
+    <!-- Botão para criar exame -->
+    <button id="btnAddExame" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+      Criar Novo Exame
+    </button>
+
+    <!-- Botão de logout -->
+    <button onclick="logout()" class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">
+      Sair
+    </button>
+  </div>
+
+  <script>
+    const API_URL = "http://192.168.43.184:3000";
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      window.location.href = "login.html";
+    } else {
+      // Verifica token com backend
+      fetch(`${API_URL}/usuarios/me`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Token inválido");
+        return res.json();
+      })
+      .then(data => {
+        document.getElementById("message").innerText = `Bem-vindo, ${data.nome}!`;
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      });
+    }
+
+    // Logout
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "index.html";
+    }
+
+    // Abrir página de criar exame
+    document.getElementById("btnAddExame").addEventListener("click", () => {
+      // Redireciona para exameadd.html
+      window.location.href = "exameadd.html";
+    });
+  </script>
+
+</body>
+</html>

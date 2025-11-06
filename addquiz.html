@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Perguntas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-gray-800 text-white flex flex-col">
+    <div class="p-4 text-2xl font-bold">Admin Panel</div>
+    <nav class="flex-1">
+      <a href="dashboard.html" class="block py-2 px-4 hover:bg-gray-700">Dashboard</a>
+      <a href="exameadd.html" class="block py-2 px-4 hover:bg-gray-700">Exames</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 p-6">
+    <header class="flex justify-between items-center mb-6">
+      <h1 id="exameTitulo" class="text-2xl font-bold">Perguntas</h1>
+      <button onclick="logout()" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Sair</button>
+    </header>
+
+    <!-- Formulário -->
+    <div class="bg-white p-6 rounded shadow mb-6 max-w-3xl">
+      <h2 class="text-xl font-bold mb-4">Adicionar / Editar Pergunta</h2>
+      <form id="formPergunta" class="grid grid-cols-1 gap-3">
+        <textarea id="pergunta" placeholder="Pergunta" class="border px-3 py-2 rounded" required></textarea>
+        <input type="text" id="imagem" placeholder="URL da imagem (opcional)" class="border px-3 py-2 rounded" />
+        <select id="tipo" class="border px-3 py-2 rounded" required>
+          <option value="multipla">Múltipla Escolha</option>
+          <option value="dissertativa">Dissertativa</option>
+        </select>
+        <input type="text" id="opcaoA" placeholder="Opção A" class="border px-3 py-2 rounded" />
+        <input type="text" id="opcaoB" placeholder="Opção B" class="border px-3 py-2 rounded" />
+        <input type="text" id="opcaoC" placeholder="Opção C" class="border px-3 py-2 rounded" />
+        <input type="text" id="opcaoD" placeholder="Opção D" class="border px-3 py-2 rounded" />
+        <label for="correta" class="block text-gray-700">Resposta Correta</label>
+        <select id="correta" class="w-full border px-3 py-2 rounded" required>
+          <option value="">Selecione a opção correta</option>
+          <option value="A">Opção A</option>
+          <option value="B">Opção B</option>
+          <option value="C">Opção C</option>
+          <option value="D">Opção D</option>
+        </select>
+        <button type="submit" class="bg-green-600 text-white py-2 rounded hover:bg-green-700">Salvar Pergunta</button>
+        <input type="hidden" id="perguntaId" />
+      </form>
+      <p id="message" class="mt-2 text-gray-600"></p>
+    </div>
+
+    <!-- Lista de Perguntas -->
+    <div class="bg-white p-6 rounded shadow max-w-4xl">
+      <h2 class="text-xl font-bold mb-4">Perguntas Existentes</h2>
+      <table class="w-full border-collapse border">
+        <thead>
+          <tr>
+            <th class="border px-3 py-2">ID</th>
+            <th class="border px-3 py-2">Pergunta</th>
+            <th class="border px-3 py-2">Tipo</th>
+            <th class="border px-3 py-2">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="perguntasTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://192.168.43.184:3000";
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "login.html";
+
+    // Query string para pegar exameId e título
+    const urlParams = new URLSearchParams(window.location.search);
+    const exameId = urlParams.get("exameId");
+    const exameTitulo = decodeURIComponent(urlParams.get("titulo") || "Exame");
+    document.getElementById("exameTitulo").innerText = `Perguntas do Exame: ${exameTitulo}`;
+
+    const form = document.getElementById("formPergunta");
+    const tbody = document.getElementById("perguntasTbody");
+
+    async function carregarPerguntas() {
+      tbody.innerHTML = '';
+      try {
+        const res = await fetch(`${API_URL}/perguntas/exame/${exameId}`);
+        const perguntas = await res.json();
+        perguntas.forEach(p => {
+          const tr = document.createElement("tr");
+          tr.classList.add("border-b");
+          tr.innerHTML = `
+            <td class="border px-2 py-1">${p.id}</td>
+            <td class="border px-2 py-1">${p.pergunta}</td>
+            <td class="border px-2 py-1">${p.tipo}</td>
+            <td class="border px-2 py-1 flex gap-1">
+              <button onclick="editarPergunta(${p.id})" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Editar</button>
+              <button onclick="deletarPergunta(${p.id})" class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">Deletar</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const perguntaId = document.getElementById("perguntaId").value;
+      const perguntaData = {
+        pergunta: document.getElementById("pergunta").value,
+        imagem: document.getElementById("imagem").value,
+        tipo: document.getElementById("tipo").value,
+        opcaoA: document.getElementById("opcaoA").value,
+        opcaoB: document.getElementById("opcaoB").value,
+        opcaoC: document.getElementById("opcaoC").value,
+        opcaoD: document.getElementById("opcaoD").value,
+        correta: document.getElementById("correta").value,
+        exameId: Number(exameId)
+      };
+      
+      try {
+        let res;
+        if (perguntaId) {
+          res = await fetch(`${API_URL}/perguntas/${perguntaId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(perguntaData)
+          });
+        } else {
+          res = await fetch(`${API_URL}/perguntas`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(perguntaData)
+          });
+        }
+
+        const data = await res.json();
+        document.getElementById("message").innerText = res.ok ? data.message : `Erro: ${data.error}`;
+        form.reset();
+        document.getElementById("perguntaId").value = '';
+        carregarPerguntas();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    async function deletarPergunta(id) {
+      if (!confirm("Tem certeza que deseja deletar esta pergunta?")) return;
+      try {
+        const res = await fetch(`${API_URL}/perguntas/${id}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        alert(data.message);
+        carregarPerguntas();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function editarPergunta(id) {
+      try {
+        const res = await fetch(`${API_URL}/perguntas/${id}`);
+        const p = await res.json();
+        document.getElementById("perguntaId").value = p.id;
+        document.getElementById("pergunta").value = p.pergunta;
+        document.getElementById("imagem").value = p.imagem || '';
+        document.getElementById("tipo").value = p.tipo;
+        document.getElementById("opcaoA").value = p.opcaoA || '';
+        document.getElementById("opcaoB").value = p.opcaoB || '';
+        document.getElementById("opcaoC").value = p.opcaoC || '';
+        document.getElementById("opcaoD").value = p.opcaoD || '';
+        document.getElementById("correta").value = p.correta || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    }
+
+    carregarPerguntas();
+  </script>
+</body>
+</html>
