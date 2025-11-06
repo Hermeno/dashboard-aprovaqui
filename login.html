@@ -47,7 +47,8 @@
         if (response.ok && data.token) {
           console.log("Login bem-sucedido. Salvando token...");
           localStorage.setItem("token", data.token);
-          window.location.href = "dashboard.html";
+          console.log("Token lido no dashboard:", token);
+          window.location.href = "/dashboard.html";
         } else {
           console.warn("Erro no login:", data.error || "Erro desconhecido");
           alertDiv.innerText = data.error || "Erro ao fazer login";
