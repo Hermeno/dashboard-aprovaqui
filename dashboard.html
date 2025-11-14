@@ -1,63 +1,66 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - AprovAqui</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>body{min-height:100vh}</style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body class="bg-gray-100">
+  <div class="max-w-5xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Dashboard - AprovAqui</h1>
+      <div>
+        <a href="exames.html" class="mr-4 text-blue-600 hover:underline">Exames</a>
+        <a href="perfil.html" id="perfilLink" class="mr-4 text-gray-700 hover:underline">Perfil</a>
+        <button id="logoutBtn" class="bg-red-500 text-white px-3 py-1 rounded">Sair</button>
+      </div>
+    </div>
 
-  <div class="max-w-md w-full bg-white p-6 rounded-lg shadow-lg text-center space-y-4">
-    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
-    <p id="message" class="text-gray-600"></p>
+    <div id="alert" class="hidden p-3 rounded mb-4"></div>
 
-    <!-- Botão para criar exame -->
-    <button id="btnAddExame" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
-      Criar Novo Exame
-    </button>
-
-    <!-- Botão de logout -->
-    <button onclick="logout()" class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">
-      Sair
-    </button>
+    <div class="bg-white p-6 rounded shadow">
+      <p class="text-gray-700">Utilize o menu para gerenciar Exames e Perguntas. Você precisa estar autenticado.</p>
+    </div>
   </div>
 
   <script>
-  const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
-  const token = localStorage.getItem("token");
+    const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
+    const token = localStorage.getItem('token');
 
-  if (!token) {
-    window.location.href = "login.html";
-  } else {
-    document.getElementById("message").innerText = "Carregando...";
+    function showAlert(msg, type='red'){
+      const el = $('#alert');
+      el.removeClass('hidden').text(msg);
+      if(type==='green') el.attr('class','bg-green-500 text-white p-3 rounded mb-4');
+      else el.attr('class','bg-red-500 text-white p-3 rounded mb-4');
+    }
 
-    fetch(`${API_URL}/usuarios/me`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-    .then(res => {
-      if (!res.ok) throw new Error("Token inválido");
-      return res.json();
-    })
-    .then(data => {
-      document.getElementById("message").innerText = `Bem-vindo, ${data.nome}!`;
-    })
-    .catch(() => {
-      localStorage.removeItem("token");
-      window.location.href = "login.html";
+    if(!token){
+      // não autenticado
+      window.location.href = 'login.html';
+    }
+
+    $('#logoutBtn').on('click', ()=>{
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
     });
-  }
 
-  function logout() {
-    localStorage.removeItem("token");
-    window.location.href = "index.html";
-  }
-
-  document.getElementById("btnAddExame").addEventListener("click", () => {
-    window.location.href = "exameadd.html";
-  });
-</script>
-
-
+    // buscar perfil para exibir nome (opcional)
+    $(function(){
+      $.ajax({
+        url: `${API_URL}/usuarios/me`,
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+        success(data){
+          if(data && data.nome) $('#perfilLink').text(data.nome).attr('href','perfil.html');
+        },
+        error(xhr){
+          if(xhr.status===401) { localStorage.removeItem('token'); window.location.href='login.html'; }
+        }
+      });
+    });
+  </script>
 </body>
 </html>

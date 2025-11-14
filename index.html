@@ -1,16 +1,584 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Início</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AprovAqui (SPA) — Atualizado</title>
+
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    .hidden{display:none}
+    img.max-preview{max-width:240px;max-height:160px}
+    .fade { transition: opacity .2s ease }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-  <div class="text-center p-6 bg-white shadow-lg rounded-lg">
-    <h1 class="text-3xl font-bold mb-6 text-gray-800">Bem-vindo ao Sistema</h1>
-    <a href="login.html" class="block w-full bg-blue-500 text-white py-2 rounded mb-3 hover:bg-blue-600">Login</a>
-    <a href="register.html" class="block w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Registrar</a>
+<body class="bg-gray-100 min-h-screen text-gray-800">
+  <div class="max-w-4xl mx-auto p-6">
+    <div class="bg-white p-6 rounded shadow">
+      <!-- NAV -->
+      <div id="nav" class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-4">
+          <button data-view="home" class="navBtn text-lg font-bold">AprovAqui</button>
+          <button data-view="exames" class="navBtn text-sm text-gray-600 hover:underline">Exames</button>
+          <button data-view="perguntas" id="navPerguntas" class="navBtn text-sm text-gray-600 hover:underline hidden">Perguntas</button>
+        </div>
+        <div id="navAuth" class="flex items-center space-x-3">
+          <span id="userName" class="text-sm text-gray-700"></span>
+          <button id="btnLoginView" class="bg-blue-600 text-white px-3 py-1 rounded">Login</button>
+          <button id="btnRegisterView" class="bg-green-600 text-white px-3 py-1 rounded">Registrar</button>
+          <button id="btnLogout" class="bg-red-500 text-white px-3 py-1 rounded hidden">Sair</button>
+        </div>
+      </div>
+
+      <div id="alert" class="hidden mb-4 p-3 rounded"></div>
+
+      <!-- VIEWS -->
+      <div id="view-home" class="view">
+        <h2 class="text-xl font-semibold mb-2">Bem-vindo ao AprovAqui</h2>
+        <p class="text-gray-700">Crie e gerencie exames e perguntas. Faça login para continuar.</p>
+      </div>
+
+      <div id="view-login" class="view hidden">
+        <h2 class="text-xl font-semibold mb-3">Login</h2>
+        <form id="formLogin" class="space-y-3">
+          <input id="loginEmail" type="email" placeholder="Email" class="w-full p-2 border rounded" required />
+          <input id="loginSenha" type="password" placeholder="Senha" class="w-full p-2 border rounded" required />
+          <div class="flex items-center space-x-2">
+            <button class="bg-blue-600 text-white px-4 py-2 rounded">Entrar</button>
+            <button id="btnBackFromLogin" type="button" class="px-3 py-2 rounded border">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="view-register" class="view hidden">
+        <h2 class="text-xl font-semibold mb-3">Registrar</h2>
+        <form id="formRegister" class="space-y-3">
+          <input id="regNome" placeholder="Nome" class="w-full p-2 border rounded" required />
+          <input id="regEmail" type="email" placeholder="Email" class="w-full p-2 border rounded" required />
+          <input id="regSenha" type="password" placeholder="Senha" class="w-full p-2 border rounded" required />
+          <div class="flex items-center space-x-2">
+            <button class="bg-green-600 text-white px-4 py-2 rounded">Registrar</button>
+            <button id="btnBackFromRegister" type="button" class="px-3 py-2 rounded border">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="view-exames" class="view hidden">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xl font-semibold">Exames</h2>
+          <div>
+            <button id="btnNewExamToggle" class="bg-green-600 text-white px-3 py-1 rounded">Novo Exame</button>
+          </div>
+        </div>
+
+        <div id="newExamBox" class="hidden mb-4">
+          <form id="formNewExam" class="space-y-3">
+            <input id="examTitulo" placeholder="Título" class="w-full p-2 border rounded" required />
+            <input id="examDescricao" placeholder="Descrição" class="w-full p-2 border rounded" />
+            <div class="grid grid-cols-3 gap-2">
+              <input id="examDuracao" placeholder="Duração (min)" type="number" class="p-2 border rounded" />
+              <input id="examPreco" placeholder="Preço" type="number" step="0.01" class="p-2 border rounded" />
+              <input id="examNumero" placeholder="N° Perguntas" type="number" class="p-2 border rounded" />
+            </div>
+            <div class="flex items-center space-x-2">
+              <button class="bg-green-700 text-white px-4 py-2 rounded">Criar Exame</button>
+              <button id="btnCancelNewExam" type="button" class="px-3 py-2 rounded border">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="examsList" class="space-y-3"></div>
+      </div>
+
+      <div id="view-perguntas" class="view hidden">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xl font-semibold">Perguntas do Exame <span id="pergExameTitulo" class="font-normal"></span></h2>
+          <div>
+            <button id="btnBackExames" class="bg-gray-200 px-3 py-1 rounded">Voltar</button>
+          </div>
+        </div>
+
+        <div id="pergFormBox" class="mb-4">
+          <form id="formNewPergunta" class="space-y-3">
+            <textarea id="pergTexto" placeholder="Enunciado (opcional se imagem)" class="w-full p-2 border rounded"></textarea>
+            <div>
+              <label class="block text-sm text-gray-600 mb-1">Upload de imagem (opcional)</label>
+              <input id="pergImagemFile" type="file" accept="image/*" class="w-full p-2 border rounded" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="opA" placeholder="Opção A" class="p-2 border rounded" />
+              <input id="opB" placeholder="Opção B" class="p-2 border rounded" />
+              <input id="opC" placeholder="Opção C" class="p-2 border rounded" />
+              <input id="opD" placeholder="Opção D" class="p-2 border rounded" />
+            </div>
+            <label class="block text-sm text-gray-600">Resposta correta</label>
+            <select id="opCorreta" class="p-2 border rounded w-full">
+              <option value="">-- selecione --</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+            <div class="flex items-center space-x-2">
+              <button class="bg-green-600 text-white px-4 py-2 rounded">Criar Pergunta</button>
+              <button id="btnCancelNewPerg" type="button" class="px-3 py-2 rounded border">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="questionsList" class="space-y-3"></div>
+      </div>
+
+    </div>
   </div>
+
+  <script>
+  /********************************************************************
+   * Config
+   ********************************************************************/
+  const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
+  const debug = true; // set true para logs no console
+  let spaState = { view: 'home', token: localStorage.getItem('token'), exameAtual: null, usuario: null };
+
+  /********************************************************************
+   * Utils
+   ********************************************************************/
+  function log(...args){ if(debug) console.log(...args); }
+  function showAlert(msg, type = 'red', ms = 4000){
+    const el = $('#alert');
+    el.stop(true,true);
+    el.removeClass('hidden fade').text(msg);
+    if(type === 'green') el.attr('class','bg-green-500 text-white p-3 rounded mb-4 fade');
+    else el.attr('class','bg-red-500 text-white p-3 rounded mb-4 fade');
+    setTimeout(()=> el.addClass('hidden'), ms);
+  }
+
+  function safeJson(res){
+    // tenta parsear JSON, senão retorna texto
+    return res.text().then(text => {
+      try { return JSON.parse(text || '{}'); } catch(e){ return { text }; }
+    });
+  }
+
+  function authHeaders(){
+    return spaState.token ? { 'Authorization': 'Bearer ' + spaState.token } : {};
+  }
+
+  function setAuthUI(){
+    if(spaState.token){
+      $('#btnLoginView, #btnRegisterView').addClass('hidden');
+      $('#btnLogout').removeClass('hidden');
+      // obter usuário
+      fetch(`${API_URL}/usuarios/me`, { headers: { ...authHeaders(), 'Content-Type': 'application/json' }})
+        .then(async res => {
+          const body = await safeJson(res);
+          if(res.ok){
+            spaState.usuario = body;
+            $('#userName').text(body.nome || body.email || 'Usuário');
+            log('usuario:', body);
+          } else {
+            log('erro ao buscar usuario', res.status, body);
+            // token possivelmente inválido -> limpar
+            // não forçar logout automático aqui, apenas limpar UI
+            // para forçar logout descomente a linha abaixo:
+            // logout();
+          }
+        })
+        .catch(err => { log('erro fetch /usuarios/me', err); $('#userName').text(''); });
+    } else {
+      $('#btnLoginView, #btnRegisterView').removeClass('hidden');
+      $('#btnLogout').addClass('hidden');
+      $('#userName').text('');
+    }
+  }
+
+  function isAdmin(){
+    const u = spaState.usuario;
+    if(!u) return false;
+    return (u.tipo && u.tipo.toLowerCase() === 'admin') || u.role === 'admin' || u.isAdmin;
+  }
+
+  function showView(name){
+    $('.view').addClass('hidden');
+    $(`#view-${name}`).removeClass('hidden');
+    spaState.view = name;
+  }
+
+  /********************************************************************
+   * Init & events
+   ********************************************************************/
+  $(function(){
+
+    // NAV
+    $(document).on('click', '.navBtn', function(){
+      const v = $(this).data('view');
+      if(v === 'perguntas' && !spaState.exameAtual) return showAlert('Selecione um exame primeiro');
+      showView(v);
+    });
+
+    $('#btnLoginView').on('click', ()=> showView('login'));
+    $('#btnRegisterView').on('click', ()=> showView('register'));
+    $('#btnLogout').on('click', ()=> { logout(); });
+
+    $('#btnBackFromLogin').on('click', ()=> showView('home'));
+    $('#btnBackFromRegister').on('click', ()=> showView('home'));
+
+    // login
+    $('#formLogin').on('submit', async function(e){
+      e.preventDefault();
+      const email = $('#loginEmail').val().trim();
+      const senha  = $('#loginSenha').val().trim();
+      if(!email || !senha) return showAlert('Preencha email e senha');
+      try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
+        const body = await safeJson(res);
+        log('login response', res.status, body);
+        if(!res.ok) {
+          showAlert(body.error || body.message || 'Erro no login');
+          return;
+        }
+        // backend retorna { token, usuario }
+        if(body.token){
+          spaState.token = body.token;
+          localStorage.setItem('token', body.token);
+          spaState.usuario = body.usuario || body.usuario || null;
+          showAlert('Login realizado','green');
+          setAuthUI();
+          showView('exames');
+          loadExams();
+        } else {
+          showAlert('Resposta inválida do servidor');
+        }
+      } catch(err){
+        log('erro login fetch', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+
+    // register
+    $('#formRegister').on('submit', async function(e){
+      e.preventDefault();
+      const nome = $('#regNome').val().trim();
+      const email = $('#regEmail').val().trim();
+      const senha = $('#regSenha').val().trim();
+      if(!nome || !email || !senha) return showAlert('Preencha todos os campos');
+      try {
+        const res = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, email, senha })
+        });
+        const body = await safeJson(res);
+        log('register response', res.status, body);
+        if(res.ok){
+          showAlert('Cadastro realizado — faça login', 'green');
+          showView('login');
+        } else {
+          showAlert(body.error || body.message || 'Erro ao registrar');
+        }
+      } catch(err){
+        log('erro register fetch', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+
+    // new exam toggle
+    $('#btnNewExamToggle').on('click', ()=> $('#newExamBox').toggleClass('hidden'));
+    $('#btnCancelNewExam').on('click', ()=> { $('#newExamBox').addClass('hidden'); $('#formNewExam')[0].reset(); });
+
+    // create exam
+    $('#formNewExam').on('submit', async function(e){
+      e.preventDefault();
+      if(!spaState.token) return showAlert('Login necessário');
+      const titulo = $('#examTitulo').val().trim();
+      const descricao = $('#examDescricao').val().trim();
+      const duracao = parseInt($('#examDuracao').val() || 0, 10);
+      const preco = parseFloat($('#examPreco').val() || 0);
+      const numeroPerguntas = parseInt($('#examNumero').val() || 0, 10);
+      if(!titulo) return showAlert('Informe o título');
+      try {
+        const res = await fetch(`${API_URL}/exames`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', ...authHeaders() },
+          body: JSON.stringify({ titulo, descricao, duracao, preco, numeroPerguntas })
+        });
+        const body = await safeJson(res);
+        log('create exame', res.status, body);
+        if(res.ok){
+          showAlert('Exame criado','green');
+          $('#formNewExam')[0].reset();
+          $('#newExamBox').addClass('hidden');
+          loadExams();
+        } else showAlert(body.error || body.message || 'Erro ao criar exame');
+      } catch(err){
+        log('erro create exame', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+
+    // cancel new pergunta
+    $('#btnCancelNewPerg').on('click', ()=> { $('#formNewPergunta')[0].reset(); });
+
+    // create pergunta
+    $('#formNewPergunta').on('submit', async function(e){
+      e.preventDefault();
+      if(!spaState.token) return showAlert('Login necessário');
+      if(!spaState.exameAtual) return showAlert('Selecione um exame');
+  const pergunta = $('#pergTexto').val().trim();
+  const imagemFile = $('#pergImagemFile')[0] ? $('#pergImagemFile')[0].files[0] : null;
+      const opcaoA = $('#opA').val().trim();
+      const opcaoB = $('#opB').val().trim();
+      const opcaoC = $('#opC').val().trim();
+      const opcaoD = $('#opD').val().trim();
+      const correta = $('#opCorreta').val().trim();
+
+      if(!pergunta && !imagemFile) return showAlert('Preencha o enunciado ou selecione uma imagem (pelo menos um).');
+      try {
+        let res, body;
+        if(imagemFile){
+          // enviar multipart/form-data
+          const fd = new FormData();
+          fd.append('pergunta', pergunta);
+          fd.append('tipo', 'objetiva');
+          fd.append('opcaoA', opcaoA);
+          fd.append('opcaoB', opcaoB);
+          fd.append('opcaoC', opcaoC);
+          fd.append('opcaoD', opcaoD);
+          fd.append('correta', correta);
+          fd.append('exameId', spaState.exameAtual);
+          fd.append('imagemPergunta', imagemFile, imagemFile.name);
+
+          res = await fetch(`${API_URL}/perguntas`, {
+            method: 'POST',
+            headers: { ...authHeaders() }, // don't set Content-Type, browser will set multipart boundary
+            body: fd
+          });
+          body = await safeJson(res);
+        } else {
+          const payload = { pergunta, tipo: 'objetiva', opcaoA, opcaoB, opcaoC, opcaoD, correta, exameId: spaState.exameAtual };
+          res = await fetch(`${API_URL}/perguntas`, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', ...authHeaders() },
+            body: JSON.stringify(payload)
+          });
+          body = await safeJson(res);
+        }
+
+        log('create pergunta', res.status, body);
+        if(res.ok){
+          showAlert('Pergunta criada','green');
+          $('#formNewPergunta')[0].reset();
+          loadQuestions(spaState.exameAtual);
+        } else showAlert(body.error || body.message || 'Erro ao criar pergunta');
+      } catch(err){
+        log('erro create pergunta', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+
+    // back to exames from perguntas
+    $('#btnBackExames').on('click', function(){ spaState.exameAtual = null; $('#navPerguntas').addClass('hidden'); showView('exames'); });
+
+    // logout
+    function logout(){
+      localStorage.removeItem('token');
+      spaState.token = null;
+      spaState.usuario = null;
+      spaState.exameAtual = null;
+      setAuthUI();
+      showView('home');
+      showAlert('Desconectado','green');
+    }
+
+    // set auth UI initial
+    setAuthUI();
+    showView('home');
+
+  }); // end jQuery ready
+
+  /********************************************************************
+   * Load exams / questions / render helpers
+   ********************************************************************/
+  async function loadExams(){
+    if(!spaState.token) return showAlert('Login necessário');
+    try {
+      const res = await fetch(`${API_URL}/exames`, { headers: { ...authHeaders(), 'Content-Type': 'application/json' }});
+      const body = await safeJson(res);
+      log('loadExams', res.status, body);
+      if(!res.ok) { showAlert(body.error || body.message || 'Erro ao obter exames'); return; }
+      renderExams(body);
+    } catch(err){
+      log('erro loadExams', err);
+      showAlert('Erro ao conectar com o servidor — veja console (F12)');
+    }
+  }
+
+  function renderExams(list){
+    const c = $('#examsList'); c.empty();
+    if(!list || list.length === 0) return c.append('<div class="text-gray-600">Nenhum exame.</div>');
+    list.forEach(ex => {
+      const id = ex.id || ex._id || ex._idExame || ex.exameId;
+      const el = $(`
+        <div class="p-3 border rounded flex justify-between items-center">
+          <div>
+            <div class="font-semibold">${escapeHtml(ex.titulo || ex.title || ex.nome || 'Sem título')}</div>
+            <div class="text-sm text-gray-600">${escapeHtml(ex.descricao || '')}</div>
+            <div class="text-xs text-gray-500">Duração: ${ex.duracao||'-'} • Perguntas: ${ex.numeroPerguntas||'-'} • Preço: ${ex.preco||0}</div>
+          </div>
+          <div class="space-x-2">
+            <button class="btnViewPerg text-white bg-blue-500 px-3 py-1 rounded" data-id="${id}" data-titulo="${escapeHtml(ex.titulo||'')}">Perguntas</button>
+            <button class="btnEditExam bg-yellow-400 text-white px-3 py-1 rounded" data-id="${id}">Editar</button>
+            ${isAdmin() ? `<button class="btnDelExam bg-red-500 text-white px-3 py-1 rounded" data-id="${id}">Excluir</button>` : ''}
+          </div>
+        </div>
+      `);
+      c.append(el);
+    });
+
+    // handlers
+    $('.btnViewPerg').off('click').on('click', function(){
+      const id = $(this).data('id');
+      const titulo = $(this).data('titulo');
+      spaState.exameAtual = id;
+      $('#pergExameTitulo').text(titulo || '');
+      $('#navPerguntas').removeClass('hidden');
+      showView('perguntas');
+      loadQuestions(id);
+    });
+
+    $('.btnDelExam').off('click').on('click', async function(){
+      if(!confirm('Excluir exame?')) return;
+      const id = $(this).data('id');
+      try {
+        const res = await fetch(`${API_URL}/exames/${id}`, { method: 'DELETE', headers: { ...authHeaders() }});
+        const body = await safeJson(res);
+        log('del exame', res.status, body);
+        if(res.ok){ showAlert('Exame excluído','green'); loadExams(); }
+        else showAlert(body.error || body.message || 'Erro ao excluir exame');
+      } catch(err){
+        log('erro del exame', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+
+    $('.btnEditExam').off('click').on('click', async function(){
+      const id = $(this).data('id');
+      const novo = prompt('Novo título:');
+      if(novo === null) return;
+      try {
+        const res = await fetch(`${API_URL}/exames/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ titulo: novo })
+        });
+        const body = await safeJson(res);
+        log('edit exame', res.status, body);
+        if(res.ok){ showAlert('Exame atualizado','green'); loadExams(); }
+        else showAlert(body.error || body.message || 'Erro ao atualizar exame');
+      } catch(err){
+        log('erro edit exame', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+  }
+
+  async function loadQuestions(exameId){
+    try {
+      const res = await fetch(`${API_URL}/perguntas/exame/${exameId}`, { headers: { ...authHeaders(), 'Content-Type':'application/json' }});
+      const body = await safeJson(res);
+      log('loadQuestions', res.status, body);
+      if(!res.ok){ showAlert(body.error || body.message || 'Erro ao obter perguntas'); return; }
+      renderQuestions(body);
+    } catch(err){
+      log('erro loadQuestions', err);
+      showAlert('Erro ao conectar com o servidor — veja console (F12)');
+    }
+  }
+
+  function renderQuestions(list){
+    const c = $('#questionsList'); c.empty();
+    if(!list || list.length === 0) return c.append('<div class="text-gray-600">Nenhuma pergunta.</div>');
+    list.forEach(q => {
+      const id = q.id || q._id || q._idPergunta;
+      const imgHtml = q.imagemPergunta ? `<div class="mt-2"><img src="${escapeHtml(q.imagemPergunta)}" class="max-preview border rounded"/></div>` : '';
+      const el = $(`
+        <div class="p-3 border rounded">
+          <div class="font-semibold">${escapeHtml(q.pergunta || q.texto || (q.imagemPergunta ? 'Pergunta (imagem)' : 'Sem texto'))}</div>
+          <div class="text-sm text-gray-600">Correta: ${escapeHtml(q.correta || q.resposta || '-') } • Tipo: ${escapeHtml(q.tipo || '-')}</div>
+          <div class="text-xs mt-2">A:${escapeHtml(q.opcaoA||'-')} | B:${escapeHtml(q.opcaoB||'-')} | C:${escapeHtml(q.opcaoC||'-')} | D:${escapeHtml(q.opcaoD||'-')}</div>
+          ${imgHtml}
+          <div class="mt-2 space-x-2">
+            <button class="btnEditQ bg-yellow-400 text-white px-3 py-1 rounded" data-id="${id}">Editar</button>
+            <button class="btnDelQ bg-red-500 text-white px-3 py-1 rounded" data-id="${id}">Excluir</button>
+          </div>
+        </div>
+      `);
+      c.append(el);
+    });
+
+    $('.btnDelQ').off('click').on('click', async function(){
+      if(!confirm('Excluir pergunta?')) return;
+      const id = $(this).data('id');
+      try {
+        const res = await fetch(`${API_URL}/perguntas/${id}`, { method: 'DELETE', headers: { ...authHeaders() }});
+        const body = await safeJson(res);
+        log('del pergunta', res.status, body);
+        if(res.ok){ showAlert('Pergunta excluída','green'); loadQuestions(spaState.exameAtual); }
+        else showAlert(body.error || body.message || 'Erro ao excluir pergunta');
+      } catch(err){
+        log('erro del pergunta', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+
+    $('.btnEditQ').off('click').on('click', async function(){
+      const id = $(this).data('id');
+      // pega estado atual da pergunta para editar melhor? simplificamos usando prompts:
+      const novoTexto = prompt('Novo enunciado (deixe em branco para não alterar):');
+      if(novoTexto === null) return;
+      const novaCorreta = prompt('Nova alternativa correta (A/B/C/D) (deixe em branco para não alterar):');
+      // build payload only com campos alterados
+      const payload = {};
+      if(novoTexto !== '') payload.pergunta = novoTexto;
+      if(novaCorreta !== '') payload.correta = novaCorreta;
+      try {
+        const res = await fetch(`${API_URL}/perguntas/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type':'application/json', ...authHeaders() },
+          body: JSON.stringify(payload)
+        });
+        const body = await safeJson(res);
+        log('edit pergunta', res.status, body);
+        if(res.ok){ showAlert('Pergunta atualizada','green'); loadQuestions(spaState.exameAtual); }
+        else showAlert(body.error || body.message || 'Erro ao atualizar pergunta');
+      } catch(err){
+        log('erro edit pergunta', err);
+        showAlert('Erro ao conectar com o servidor — veja console (F12)');
+      }
+    });
+  }
+
+  /********************************************************************
+   * Small helpers
+   ********************************************************************/
+  function escapeHtml(text){
+    if(text == null) return '';
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  </script>
 </body>
 </html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perguntas - AprovAqui</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-5xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Perguntas</h1>
+      <div>
+        <a href="exames.html" class="text-gray-700 hover:underline mr-4">Voltar aos Exames</a>
+        <button id="logoutBtn" class="bg-red-500 text-white px-3 py-1 rounded">Sair</button>
+      </div>
+    </div>
+
+    <div id="alert" class="hidden p-3 rounded mb-4"></div>
+
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-semibold mb-4">Criar Pergunta</h2>
+      <form id="createQuestionForm" class="space-y-3 mb-6">
+        <textarea id="pergunta" placeholder="Enunciado da pergunta (opcional se for imagem)" class="w-full p-2 border rounded"></textarea>
+        <div class="grid grid-cols-3 gap-3">
+          <select id="tipo" class="p-2 border rounded">
+            <option value="objetiva">Objetiva</option>
+            <option value="dissertativa">Dissertativa</option>
+          </select>
+          <input id="imagemPergunta" placeholder="URL imagem (opcional)" class="p-2 border rounded" />
+          <input id="correta" placeholder="Resposta correta" class="p-2 border rounded" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <input id="opcaoA" placeholder="Opção A" class="p-2 border rounded" />
+          <input id="opcaoB" placeholder="Opção B" class="p-2 border rounded" />
+          <input id="opcaoC" placeholder="Opção C" class="p-2 border rounded" />
+          <input id="opcaoD" placeholder="Opção D" class="p-2 border rounded" />
+        </div>
+        <button class="bg-green-600 text-white px-4 py-2 rounded">Criar Pergunta</button>
+      </form>
+
+      <h2 class="text-lg font-semibold mb-4">Adicionar Texto ao Exame</h2>
+      <form id="createTextoForm" class="space-y-3 mb-6">
+        <input id="textoTitulo" placeholder="Título do texto (opcional)" class="w-full p-2 border rounded" />
+        <textarea id="textoConteudo" placeholder="Conteúdo do texto" class="w-full p-2 border rounded" required></textarea>
+        <button class="bg-indigo-600 text-white px-4 py-2 rounded">Criar Texto</button>
+      </form>
+
+      <h2 class="text-lg font-semibold mb-4">Lista de Perguntas</h2>
+      <div id="questionsList" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <script src="perguntas.js"></script>
+</body>
+</html>
