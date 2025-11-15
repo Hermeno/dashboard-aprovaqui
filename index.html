@@ -142,10 +142,25 @@
   /********************************************************************
    * Config
    ********************************************************************/
-  const API_URL = "http://localhost:3000";
-  // const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
+  // const API_URL = "http://localhost:3000";
+  const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
   const debug = true; // set true para logs no console
   let spaState = { view: 'home', token: localStorage.getItem('token'), exameAtual: null, usuario: null };
+
+  // Monitora respostas 401 para diagnosticar logouts inesperados
+  (function(){
+    const _fetch = window.fetch.bind(window);
+    window.fetch = async function(...args){
+      const res = await _fetch(...args);
+      try{
+        if(res && res.status === 401){
+          console.warn('Fetch returned 401 for', args[0]);
+          // leave token intact, but log for debugging
+        }
+      }catch(e){ /* ignore */ }
+      return res;
+    };
+  })();
 
   /********************************************************************
    * Utils
@@ -392,6 +407,7 @@
 
     // logout
     function logout(){
+      console.log('logout() called - clearing token/UI');
       localStorage.removeItem('token');
       spaState.token = null;
       spaState.usuario = null;
