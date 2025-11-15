@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br"> 
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AprovAqui (SPA) — Atualizado</title>
+  <title>AprovAqui</title> 
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -91,6 +91,8 @@
           </form>
         </div>
 
+        <!-- Textos são gerenciados em página separada (texto.html) -->
+
         <div id="examsList" class="space-y-3"></div>
       </div>
 
@@ -140,7 +142,8 @@
   /********************************************************************
    * Config
    ********************************************************************/
-  const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
+  const API_URL = "http://localhost:3000";
+  // const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
   const debug = true; // set true para logs no console
   let spaState = { view: 'home', token: localStorage.getItem('token'), exameAtual: null, usuario: null };
 
@@ -435,6 +438,7 @@
           </div>
           <div class="space-x-2">
             <button class="btnViewPerg text-white bg-blue-500 px-3 py-1 rounded" data-id="${id}" data-titulo="${escapeHtml(ex.titulo||'')}">Perguntas</button>
+            <button class="btnTextExam bg-indigo-600 text-white px-3 py-1 rounded" data-id="${id}" data-titulo="${escapeHtml(ex.titulo||'')}">Texto</button>
             <button class="btnEditExam bg-yellow-400 text-white px-3 py-1 rounded" data-id="${id}">Editar</button>
             ${isAdmin() ? `<button class="btnDelExam bg-red-500 text-white px-3 py-1 rounded" data-id="${id}">Excluir</button>` : ''}
           </div>
@@ -488,6 +492,15 @@
         showAlert('Erro ao conectar com o servidor — veja console (F12)');
       }
     });
+
+    // navegar para página de Textos do exame (página separada)
+    $('.btnTextExam').off('click').on('click', function(){
+      const id = $(this).data('id');
+      // abre a página texto.html com query param
+      window.location.href = `texto.html?exameId=${encodeURIComponent(id)}`;
+    });
+
+    // Textos são gerenciados em página separada (texto.html)
   }
 
   async function loadQuestions(exameId){

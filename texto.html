@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Textos do Exame — AprovAqui</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    .hidden{display:none}
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
+  <div class="max-w-4xl mx-auto p-6">
+    <div class="bg-white p-6 rounded shadow">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <a href="index.html" class="text-lg font-bold">AprovAqui</a>
+        </div>
+        <div>
+          <button id="btnBack" class="px-3 py-1 rounded border">Voltar</button>
+        </div>
+      </div>
+
+      <div id="alert" class="hidden mb-4 p-3 rounded"></div>
+
+      <h2 id="pageTitle" class="text-xl font-semibold mb-3">Textos do Exame</h2>
+
+      <div id="textsArea">
+        <div id="newTextInline" class="mb-4 hidden">
+          <form id="formNewTextoInline" class="space-y-3">
+            <input id="textoExameIdInline" type="hidden" />
+            <input id="textoTituloInline" placeholder="Título (opcional)" class="w-full p-2 border rounded" />
+            <textarea id="textoConteudoInline" placeholder="Conteúdo do texto" class="w-full p-2 border rounded" required></textarea>
+            <div class="flex items-center space-x-2">
+              <button class="bg-indigo-600 text-white px-4 py-2 rounded">Criar Texto</button>
+              <button id="btnCancelNewTextoInline" type="button" class="px-3 py-2 rounded border">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="textsList" class="space-y-4"></div>
+
+      </div>
+      
+      <!-- Modal de visualização de texto -->
+      <div id="textModalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center p-6">
+        <div id="textModal" class="bg-white rounded shadow max-w-3xl w-full overflow-auto" style="max-height:85vh;">
+          <div class="flex items-center justify-between p-4 border-b">
+            <div class="font-semibold" id="textModalTitle">Título</div>
+            <div>
+              <button id="textModalClose" class="px-3 py-1 rounded border">Fechar</button>
+            </div>
+          </div>
+          <div class="p-4 prose text-sm text-gray-800" id="textModalContent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // use local backend by default during dev; change if you want production
+  const API_URL = "http://localhost:3000";
+  // const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
+  const debug = true;
+  let token = localStorage.getItem('token');
+
+  function log(...a){ if(debug) console.log(...a); }
+  function showAlert(msg, type='red', ms=4000){
+    const el = $('#alert'); el.stop(true,true); el.removeClass('hidden').text(msg);
+    if(type==='green') el.attr('class','bg-green-500 text-white p-3 rounded mb-4');
+    else el.attr('class','bg-red-500 text-white p-3 rounded mb-4');
+    setTimeout(()=> el.addClass('hidden'), ms);
+  }
+
+  function getQueryParam(name){
+    const p = new URLSearchParams(window.location.search);
+    return p.get(name);
+  }
+
+  $(function(){
+    const exameId = getQueryParam('exameId');
+    if(!exameId){ showAlert('exameId não fornecido na URL'); return; }
+    $('#textoExameIdInline').val(exameId);
+
+    $('#btnBack').on('click', ()=> window.location.href = 'index.html');
+
+    // mostrar form de criação se estiver logado
+    if(token){ $('#newTextInline').removeClass('hidden'); }
+
+    $('#btnCancelNewTextoInline').on('click', ()=> { $('#formNewTextoInline')[0].reset(); });
+
+    $('#formNewTextoInline').on('submit', async function(e){
+      e.preventDefault();
+      if(!token) return showAlert('Login necessário');
+      const exameId = $('#textoExameIdInline').val();
+      const titulo = $('#textoTituloInline').val().trim();
+      const texto = $('#textoConteudoInline').val().trim();
+      if(!texto) return showAlert('Texto vazio');
+      try {
+        const res = await fetch(`${API_URL}/textos`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer '+token },
+          body: JSON.stringify({ exameId: Number(exameId), titulo: titulo || null, texto })
+        });
+        const body = await res.text().then(t=>{ try{ return JSON.parse(t||'{}') }catch(e){ return { text: t } }});
+        log('create texto', res.status, body);
+        if(res.ok){ showAlert('Texto criado','green'); $('#formNewTextoInline')[0].reset(); loadTexts(exameId); }
+        else showAlert(body.error || body.message || 'Erro ao criar texto');
+      } catch(err){ log('erro create texto', err); showAlert('Erro ao conectar com o servidor'); }
+    });
+
+    loadTexts(exameId);
+  });
+
+  async function loadTexts(exameId){
+    try {
+      const res = await fetch(`${API_URL}/textos/exame/${exameId}`, { headers: { 'Content-Type':'application/json', 'Authorization': token ? 'Bearer '+token : '' } });
+      const body = await res.text().then(t=>{ try{ return JSON.parse(t||'[]') }catch(e){ return { text: t } }});
+      log('loadTexts', res.status, body);
+      if(!res.ok){ showAlert(body.error || body.message || 'Erro ao obter textos'); return; }
+      renderTexts(body || []);
+    } catch(err){ log('erro loadTexts', err); showAlert('Erro ao conectar com o servidor'); }
+  }
+
+  function renderTexts(list){
+    const c = $('#textsList'); c.empty();
+    if(!list || list.length === 0) return c.append('<div class="text-gray-600">Nenhum texto para este exame.</div>');
+    list.forEach(t=>{
+      const id = t.id || t._id;
+      const el = $(`
+        <div class="p-4 border rounded bg-gray-50">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="font-semibold">${escapeHtml(t.titulo || 'Sem título')}</div>
+              <div class="text-xs text-gray-500">Criado em: ${t.createdAt ? new Date(t.createdAt).toLocaleString() : '-'}</div>
+            </div>
+            <div class="space-x-2">
+              <button class="btnViewText bg-blue-500 text-white px-3 py-1 rounded" data-id="${id}">Ver</button>
+              ${token ? `<button class="btnEditText bg-yellow-400 text-white px-3 py-1 rounded" data-id="${id}">Editar</button>` : ''}
+            </div>
+          </div>
+          <div class="mt-3 text-sm text-gray-800">${escapeHtml(truncate(t.texto || '',300))}</div>
+        </div>
+      `);
+      c.append(el);
+    });
+
+    $('.btnViewText').off('click').on('click', function(){
+      const id = $(this).data('id');
+      viewText(id);
+    });
+
+    $('.btnEditText').off('click').on('click', function(){
+      const id = $(this).data('id');
+      editTextPrompt(id);
+    });
+  }
+
+  function escapeHtml(text){ if(text==null) return ''; return String(text).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n)+'...':s; }
+
+  async function viewText(id){
+    try {
+      const res = await fetch(`${API_URL}/textos/${id}`, { headers: { 'Content-Type':'application/json', 'Authorization': token ? 'Bearer '+token : '' }});
+      const body = await res.text().then(t=>{ try{ return JSON.parse(t||'{}')}catch(e){ return { text: t } }});
+      if(!res.ok){ showAlert(body.error || body.message || 'Erro ao obter texto'); return; }
+      // mostrar em modal interno (preserva quebras de linha)
+      const titulo = body.titulo || 'Sem título';
+      const texto = body.texto || '';
+      // escape e preservar quebras de linha
+      const safeTexto = escapeHtml(texto).replace(/\n/g, '<br/>');
+      $('#textModalTitle').text(titulo);
+      $('#textModalContent').html(safeTexto);
+      $('#textModalOverlay').removeClass('hidden');
+      // fechar handler
+      $('#textModalClose').off('click').on('click', ()=> $('#textModalOverlay').addClass('hidden'));
+    } catch(err){ log('erro viewText', err); showAlert('Erro ao conectar com o servidor'); }
+  }
+
+  async function editTextPrompt(id){
+    try {
+      const res = await fetch(`${API_URL}/textos/${id}`, { headers: { 'Content-Type':'application/json', 'Authorization': token ? 'Bearer '+token : '' }});
+      const body = await res.text().then(t=>{ try{ return JSON.parse(t||'{}')}catch(e){ return { text: t } }});
+      if(!res.ok){ showAlert(body.error || body.message || 'Erro ao obter texto'); return; }
+      const novoTitulo = prompt('Novo título (deixe em branco para não alterar):', body.titulo||'');
+      if(novoTitulo===null) return;
+      const novoConteudo = prompt('Novo conteúdo (deixe em branco para não alterar):', body.texto||'');
+      if(novoConteudo===null) return;
+      const payload = {};
+      if(novoTitulo !== '') payload.titulo = novoTitulo;
+      if(novoConteudo !== '') payload.texto = novoConteudo;
+      if(Object.keys(payload).length===0) return;
+      const upd = await fetch(`${API_URL}/textos/${id}`, {
+        method: 'PUT', headers: { 'Content-Type':'application/json', 'Authorization': token ? 'Bearer '+token : '' }, body: JSON.stringify(payload)
+      });
+      const updBody = await upd.text().then(t=>{ try{ return JSON.parse(t||'{}')}catch(e){ return { text: t } }});
+      if(upd.ok){ showAlert('Texto atualizado','green'); const exameId = getQueryParam('exameId'); loadTexts(exameId); }
+      else showAlert(updBody.error || updBody.message || 'Erro ao atualizar');
+    } catch(err){ log('erro editText', err); showAlert('Erro ao conectar com o servidor'); }
+  }
+
+  </script>
+</body>
+</html>
