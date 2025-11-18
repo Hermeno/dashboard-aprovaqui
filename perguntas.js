@@ -1,4 +1,5 @@
 const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
+// const API_URL = "http://localhost:3000";
 const token = localStorage.getItem('token');
 
 function showAlert(msg, type='red'){
@@ -7,6 +8,12 @@ function showAlert(msg, type='red'){
   if(type==='green') el.attr('class','bg-green-500 text-white p-3 rounded mb-4');
   else el.attr('class','bg-red-500 text-white p-3 rounded mb-4');
 }
+
+ajax
+
+
+
+
 
 if(!token) window.location.href = 'login.html';
 
@@ -66,7 +73,7 @@ $(function(){
           <div>
             <div class="font-semibold">${q.pergunta || (q.imagemPergunta ? 'Pergunta (imagem)' : 'Sem texto')}</div>
             <div class="text-sm text-gray-600">Tipo: ${q.tipo || '-'} • Correta: ${q.correta || '-'}</div>
-            <div class="text-xs text-gray-600 mt-2">Opções: A:${q.opcaoA || '-'} | B:${q.opcaoB || '-'} | C:${q.opcaoC || '-'} | D:${q.opcaoD || '-'}</div>
+            <div class="text-xs text-gray-600 mt-2">Opções: A:${q.opcaoA || '-'} | B:${q.opcaoB || '-'} | C:${q.opcaoC || '-'} | D:${q.opcaoD || '-'} |  E:${q.opcaoE || '-'} | F:${q.opcaoF || '-'} </div>
             ${imageHtml}
           </div>
           <div class="space-x-2">
@@ -87,6 +94,8 @@ $(function(){
     const opcaoB = $('#opcaoB').val();
     const opcaoC = $('#opcaoC').val();
     const opcaoD = $('#opcaoD').val();
+    const opcaoE = $('#opcaoE').val();
+    const opcaoF = $('#opcaoF').val();
     const correta = $('#correta').val();
     // validação: permite criar pergunta com texto e/ou imagem; pelo menos um dos dois deve estar preenchido
     if ((!pergunta || pergunta.trim() === '') && (!imagemPergunta || imagemPergunta.trim() === '')) {
@@ -96,8 +105,17 @@ $(function(){
 
     try{
       await $.ajax({ url: `${API_URL}/perguntas`, method: 'POST', contentType: 'application/json', data: JSON.stringify({ pergunta, imagemPergunta, tipo, opcaoA, opcaoB, opcaoC, opcaoD, correta, exameId }), headers: { Authorization: `Bearer ${token}` } });
-      showAlert('Pergunta criada', 'green'); $('#pergunta').val(''); $('#imagemPergunta').val(''); $('#opcaoA').val(''); $('#opcaoB').val(''); $('#opcaoC').val(''); $('#opcaoD').val(''); $('#correta').val(''); loadQuestions();
-    }catch(err){ console.error(err); showAlert('Erro ao criar pergunta'); }
+      showAlert('Pergunta criada', 'green'); $('#pergunta').val(''); $('#imagemPergunta').val(''); 
+      $('#opcaoA').val(''); $('#opcaoB').val(''); 
+      $('#opcaoC').val(''); $('#opcaoD').val(''); 
+      $('#opcaoE').val(''); $('#opcaoF').val(''); 
+      $('#correta').val('');
+       loadQuestions();
+   
+    }catch(err)
+    { 
+      console.error(err); showAlert('Erro ao criar pergunta'); 
+    }
   });
 
   // criar texto vinculado ao exame

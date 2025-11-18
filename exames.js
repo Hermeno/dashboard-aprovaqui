@@ -1,4 +1,5 @@
 const API_URL = "https://app-quizz-backend-nodes-express-and.onrender.com";
+// const API_URL = "http://localhost:3000";
 const token = localStorage.getItem('token');
 
 function showAlert(msg, type='red'){
