@@ -116,6 +116,8 @@
               <input id="opB" placeholder="Opção B" class="p-2 border rounded" />
               <input id="opC" placeholder="Opção C" class="p-2 border rounded" />
               <input id="opD" placeholder="Opção D" class="p-2 border rounded" />
+              <input id="opE" placeholder="Opção E" class="p-2 border rounded" />
+              <input id="opF" placeholder="Opção F" class="p-2 border rounded" />
             </div>
             <label class="block text-sm text-gray-600">Resposta correta</label>
             <select id="opCorreta" class="p-2 border rounded w-full">
@@ -124,6 +126,8 @@
               <option value="B">B</option>
               <option value="C">C</option>
               <option value="D">D</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
             </select>
             <div class="flex items-center space-x-2">
               <button class="bg-green-600 text-white px-4 py-2 rounded">Criar Pergunta</button>
@@ -357,6 +361,8 @@
       const opcaoB = $('#opB').val().trim();
       const opcaoC = $('#opC').val().trim();
       const opcaoD = $('#opD').val().trim();
+      const opcaoE = $('#opE').val().trim();
+      const opcaoF = $('#opF').val().trim();
       const correta = $('#opCorreta').val().trim();
 
       if(!pergunta && !imagemFile) return showAlert('Preencha o enunciado ou selecione uma imagem (pelo menos um).');
@@ -371,6 +377,8 @@
           fd.append('opcaoB', opcaoB);
           fd.append('opcaoC', opcaoC);
           fd.append('opcaoD', opcaoD);
+          fd.append('opcaoE', opcaoE);
+          fd.append('opcaoF', opcaoF);
           fd.append('correta', correta);
           fd.append('exameId', spaState.exameAtual);
           fd.append('imagemPergunta', imagemFile, imagemFile.name);
@@ -382,7 +390,7 @@
           });
           body = await safeJson(res);
         } else {
-          const payload = { pergunta, tipo: 'objetiva', opcaoA, opcaoB, opcaoC, opcaoD, correta, exameId: spaState.exameAtual };
+          const payload = { pergunta, tipo: 'objetiva', opcaoA, opcaoB, opcaoC, opcaoD, opcaoE, opcaoF, correta, exameId: spaState.exameAtual };
           res = await fetch(`${API_URL}/perguntas`, {
             method: 'POST',
             headers: { 'Content-Type':'application/json', ...authHeaders() },
@@ -543,7 +551,7 @@
         <div class="p-3 border rounded">
           <div class="font-semibold">${escapeHtml(q.pergunta || q.texto || (q.imagemPergunta ? 'Pergunta (imagem)' : 'Sem texto'))}</div>
           <div class="text-sm text-gray-600">Correta: ${escapeHtml(q.correta || q.resposta || '-') } • Tipo: ${escapeHtml(q.tipo || '-')}</div>
-          <div class="text-xs mt-2">A:${escapeHtml(q.opcaoA||'-')} | B:${escapeHtml(q.opcaoB||'-')} | C:${escapeHtml(q.opcaoC||'-')} | D:${escapeHtml(q.opcaoD||'-')}</div>
+          <div class="text-xs mt-2">A:${escapeHtml(q.opcaoA||'-')} | B:${escapeHtml(q.opcaoB||'-')} | C:${escapeHtml(q.opcaoC||'-')} | D:${escapeHtml(q.opcaoD||'-')} | E:${escapeHtml(q.opcaoE||'-')} | F:${escapeHtml(q.opcaoF||'-')}</div>
           ${imgHtml}
           <div class="mt-2 space-x-2">
             <button class="btnEditQ bg-yellow-400 text-white px-3 py-1 rounded" data-id="${id}">Editar</button>
@@ -574,7 +582,7 @@
       // pega estado atual da pergunta para editar melhor? simplificamos usando prompts:
       const novoTexto = prompt('Novo enunciado (deixe em branco para não alterar):');
       if(novoTexto === null) return;
-      const novaCorreta = prompt('Nova alternativa correta (A/B/C/D) (deixe em branco para não alterar):');
+      const novaCorreta = prompt('Nova alternativa correta (A/B/C/D,E,F,) (deixe em branco para não alterar):');
       // build payload only com campos alterados
       const payload = {};
       if(novoTexto !== '') payload.pergunta = novoTexto;
